@@ -88,6 +88,8 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
             score = 0,
             combo = 1,
             status = GameStatus.HOME,
+            isNextBlockHidden = false,
+            hiddenMovesRemaining = 0,
             hasActiveSavedGame = false
         )
         isAnimationLocked = false
@@ -104,6 +106,8 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
             currentBlockValue = startVal,
             nextBlockValue = nextVal,
             status = GameStatus.PLAYING,
+            isNextBlockHidden = false,
+            hiddenMovesRemaining = 0,
             hasActiveSavedGame = true
         )
         isAnimationLocked = false
@@ -415,9 +419,30 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
     private fun spawnNextBlock() {
         val maxVal = _state.value.grid.maxOfOrNull { it.value } ?: 2
         val nextVal = getSpawnValue(maxVal)
+
+        val remaining = _state.value.hiddenMovesRemaining
+        var nextIsHidden = _state.value.isNextBlockHidden
+        var nextRemaining = remaining
+
+        if (remaining > 0) {
+            nextRemaining = remaining - 1
+            if (nextRemaining == 0) {
+                nextIsHidden = false
+            }
+        } else {
+            if (Random.nextInt(100) < 15) {
+                nextIsHidden = true
+                nextRemaining = Random.nextInt(3, 6)
+                audioSynthManager.playPowerup()
+                hapticManager.vibratePowerup()
+            }
+        }
+
         _state.value = _state.value.copy(
             currentBlockValue = _state.value.nextBlockValue,
-            nextBlockValue = nextVal
+            nextBlockValue = nextVal,
+            isNextBlockHidden = nextIsHidden,
+            hiddenMovesRemaining = nextRemaining
         )
     }
 
@@ -647,6 +672,8 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
             .putInt("saved_score", _state.value.score)
             .putInt("saved_combo", _state.value.combo)
             .putString("saved_status", _state.value.status.name)
+            .putBoolean("saved_next_hidden", _state.value.isNextBlockHidden)
+            .putInt("saved_hidden_moves_remaining", _state.value.hiddenMovesRemaining)
             .apply()
     }
 
@@ -659,6 +686,8 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
             .remove("saved_score")
             .remove("saved_combo")
             .remove("saved_status")
+            .remove("saved_next_hidden")
+            .remove("saved_hidden_moves_remaining")
             .apply()
     }
 
@@ -677,6 +706,8 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         } catch (e: Exception) {
             GameStatus.PLAYING
         }
+        val nextHidden = sharedPrefs.getBoolean("saved_next_hidden", false)
+        val hiddenMoves = sharedPrefs.getInt("saved_hidden_moves_remaining", 0)
 
         _state.value = _state.value.copy(
             grid = grid,
@@ -685,6 +716,8 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
             score = score,
             combo = combo,
             status = if (status == GameStatus.PAUSED) GameStatus.PAUSED else GameStatus.PLAYING,
+            isNextBlockHidden = nextHidden,
+            hiddenMovesRemaining = hiddenMoves,
             hasActiveSavedGame = true
         )
         currentBlockAge = grid.maxOfOrNull { it.age } ?: 0
@@ -702,7 +735,9 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         nextVal: Int,
         score: Int,
         combo: Int,
-        status: GameStatus
+        status: GameStatus,
+        isNextBlockHidden: Boolean = false,
+        hiddenMovesRemaining: Int = 0
     ) {
         _state.value = _state.value.copy(
             grid = grid,
@@ -710,7 +745,9 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
             nextBlockValue = nextVal,
             score = score,
             combo = combo,
-            status = status
+            status = status,
+            isNextBlockHidden = isNextBlockHidden,
+            hiddenMovesRemaining = hiddenMovesRemaining
         )
     }
 }

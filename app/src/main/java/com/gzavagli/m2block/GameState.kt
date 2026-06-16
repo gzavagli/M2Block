@@ -49,5 +49,7 @@ data class GameState(
     val isMuted: Boolean = false,
     val isHapticsEnabled: Boolean = true,
     val theme: GameTheme = GameTheme.CYBERPUNK,
+    val isNextBlockHidden: Boolean = false,
+    val hiddenMovesRemaining: Int = 0,
     val hasActiveSavedGame: Boolean = false
 )

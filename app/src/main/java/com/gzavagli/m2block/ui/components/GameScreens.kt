@@ -627,7 +627,8 @@ fun GamePlayScreen(
                             )
                         }
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(text = "NEXT", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = colors.textSecondary)
+                            val nextLabel = if (state.isNextBlockHidden) "NEXT (🕵️ ${state.hiddenMovesRemaining})" else "NEXT"
+                            Text(text = nextLabel, fontSize = 9.sp, fontWeight = FontWeight.Bold, color = colors.textSecondary)
                             Spacer(modifier = Modifier.height(4.dp))
                             Box(
                                 modifier = Modifier
@@ -696,23 +697,33 @@ fun GamePlayScreen(
                         // Slot 2 (NEXT)
                         val alpha2 = (1f - (currentOffset / 57f)).coerceIn(0f, 1f)
                         val scale2 = 0.8f + 0.2f * alpha2
-                        val blockColors2 = colors.getBlockColors(slot2Value)
+                        val isHidden = state.isNextBlockHidden
+                        val blockBg = if (isHidden) {
+                            Brush.linearGradient(listOf(Color(0xFF374151), Color(0xFF1F2937)))
+                        } else {
+                            colors.getBlockColors(slot2Value).background
+                        }
+                        val blockTextColor = if (isHidden) {
+                            Color(0xFF9CA3AF)
+                        } else {
+                            colors.getBlockColors(slot2Value).textColor
+                        }
                         Box(
                             modifier = Modifier
                                 .offset(x = 57.dp)
                                 .size(42.dp)
                                 .graphicsLayer(alpha = alpha2, scaleX = scale2, scaleY = scale2)
                                 .clip(RoundedCornerShape(8.dp))
-                                .background(blockColors2.background)
+                                .background(blockBg)
                                 .border(1.dp, Color.White.copy(alpha = 0.05f), RoundedCornerShape(8.dp)),
                             contentAlignment = Alignment.Center
                         ) {
-                            val formattedVal2 = formatBlockValue(slot2Value)
+                            val formattedVal2 = if (isHidden) "?" else formatBlockValue(slot2Value)
                             Text(
                                 text = formattedVal2,
                                 fontSize = if (formattedVal2.length <= 3) 14.sp else 11.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = blockColors2.textColor
+                                color = blockTextColor
                             )
                         }
                     }

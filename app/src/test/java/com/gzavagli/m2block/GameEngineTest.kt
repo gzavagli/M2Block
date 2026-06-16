@@ -499,5 +499,102 @@ class GameEngineTest {
 
         assertTrue(viewModel.isAnimationLocked)
     }
+
+    @Test
+    fun testMysteryPhaseTriggerEventually() {
+        val prefs = MockSharedPreferences()
+        val app = MockApplication(prefs)
+        val viewModel = GameViewModel(app)
+        viewModel.startGame()
+
+        var triggered = false
+        // Simulate drops
+        for (i in 0 until 100) {
+            viewModel.isAnimationLocked = false // bypass animation lock for drop simulation
+            try {
+                viewModel.dropBlockInColumn(0)
+            } catch (e: Exception) {}
+            if (viewModel.state.value.isNextBlockHidden) {
+                triggered = true
+                assertTrue(viewModel.state.value.hiddenMovesRemaining in 3..5)
+                break
+            }
+        }
+        assertTrue("Mystery phase should be triggered eventually over 100 drops", triggered)
+    }
+
+    @Test
+    fun testMysteryPhaseDecrement() {
+        val prefs = MockSharedPreferences()
+        val app = MockApplication(prefs)
+        val viewModel = GameViewModel(app)
+        viewModel.startGame()
+
+        // Force active mystery phase
+        viewModel.setupStateForTesting(
+            grid = emptyList(),
+            currentVal = 2,
+            nextVal = 4,
+            score = 0,
+            combo = 1,
+            status = GameStatus.PLAYING,
+            isNextBlockHidden = true,
+            hiddenMovesRemaining = 3
+        )
+
+        // Drop 1
+        viewModel.isAnimationLocked = false
+        try {
+            viewModel.dropBlockInColumn(0)
+        } catch (e: Exception) {}
+        assertTrue(viewModel.state.value.isNextBlockHidden)
+        assertEquals(2, viewModel.state.value.hiddenMovesRemaining)
+
+        // Drop 2
+        viewModel.isAnimationLocked = false
+        try {
+            viewModel.dropBlockInColumn(0)
+        } catch (e: Exception) {}
+        assertTrue(viewModel.state.value.isNextBlockHidden)
+        assertEquals(1, viewModel.state.value.hiddenMovesRemaining)
+
+        // Drop 3
+        viewModel.isAnimationLocked = false
+        try {
+            viewModel.dropBlockInColumn(0)
+        } catch (e: Exception) {}
+        assertFalse(viewModel.state.value.isNextBlockHidden)
+        assertEquals(0, viewModel.state.value.hiddenMovesRemaining)
+    }
+
+    @Test
+    fun testMysteryPhasePersistence() {
+        val prefs = MockSharedPreferences()
+        val app = MockApplication(prefs)
+        val viewModel = GameViewModel(app)
+        viewModel.startGame()
+
+        // Set state to active mystery phase
+        viewModel.setupStateForTesting(
+            grid = emptyList(),
+            currentVal = 2,
+            nextVal = 4,
+            score = 100,
+            combo = 1,
+            status = GameStatus.PLAYING,
+            isNextBlockHidden = true,
+            hiddenMovesRemaining = 4
+        )
+
+        // Trigger save via pause
+        viewModel.pauseGame()
+
+        // Load in new ViewModel
+        val viewModel2 = GameViewModel(app)
+        viewModel2.resumeSavedGame()
+
+        assertTrue(viewModel2.state.value.isNextBlockHidden)
+        assertEquals(4, viewModel2.state.value.hiddenMovesRemaining)
+    }
 }
 
