@@ -430,9 +430,9 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
                 nextIsHidden = false
             }
         } else {
-            if (Random.nextInt(100) < 15) {
+            if (Random.nextInt(100) < 7) {
                 nextIsHidden = true
-                nextRemaining = Random.nextInt(3, 6)
+                nextRemaining = Random.nextInt(6, 11)
                 audioSynthManager.playPowerup()
                 hapticManager.vibratePowerup()
             }

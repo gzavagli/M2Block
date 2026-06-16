@@ -509,18 +509,18 @@ class GameEngineTest {
 
         var triggered = false
         // Simulate drops
-        for (i in 0 until 100) {
+        for (i in 0 until 200) {
             viewModel.isAnimationLocked = false // bypass animation lock for drop simulation
             try {
                 viewModel.dropBlockInColumn(0)
             } catch (e: Exception) {}
             if (viewModel.state.value.isNextBlockHidden) {
                 triggered = true
-                assertTrue(viewModel.state.value.hiddenMovesRemaining in 3..5)
+                assertTrue(viewModel.state.value.hiddenMovesRemaining in 6..10)
                 break
             }
         }
-        assertTrue("Mystery phase should be triggered eventually over 100 drops", triggered)
+        assertTrue("Mystery phase should be triggered eventually over 200 drops", triggered)
     }
 
     @Test
